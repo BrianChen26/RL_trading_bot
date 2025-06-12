@@ -13,7 +13,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 matplotlib.use("Agg")
 
-# from stable_baselines3.common.logger import Logger, KVWriter, CSVOutputFormat
+
 
 
 class StockTradingEnv(gym.Env):
@@ -61,7 +61,7 @@ class StockTradingEnv(gym.Env):
         self.stock_dim = stock_dim
         self.hmax = hmax
         self.num_stock_shares = num_stock_shares
-        self.initial_amount = initial_amount  # get the initial cash
+        self.initial_amount = initial_amount  
         self.buy_cost_pct = buy_cost_pct
         self.sell_cost_pct = sell_cost_pct
         self.reward_scaling = reward_scaling
@@ -83,43 +83,41 @@ class StockTradingEnv(gym.Env):
         self.model_name = model_name
         self.mode = mode
         self.iteration = iteration
-        # initalize state
+
         self.state = self._initiate_state()
 
-        # initialize reward
+
         self.reward = 0
         self.turbulence = 0
         self.cost = 0
         self.trades = 0
         self.episode = 0
-        # memorize all the total balance change
+
         self.asset_memory = [
             self.initial_amount
             + np.sum(
                 np.array(self.num_stock_shares)
                 * np.array(self.state[1 : 1 + self.stock_dim])
             )
-        ]  # the initial total asset is calculated by cash + sum (num_share_stock_i * price_stock_i)
+        ]  
         self.rewards_memory = []
         self.actions_memory = []
         self.state_memory = (
             []
-        )  # we need sometimes to preserve the state in the middle of trading process
+        )  
         self.date_memory = [self._get_date()]
-        #         self.logger = Logger('results',[CSVOutputFormat])
-        # self.reset()
+
         self._seed()
 
     def _sell_stock(self, index, action):
         def _do_sell_normal():
             if (
                 self.state[index + 2 * self.stock_dim + 1] != True
-            ):  # check if the stock is able to sell, for simlicity we just add it in techical index
-                # if self.state[index + 1] > 0: # if we use price<0 to denote a stock is unable to trade in that day, the total asset calculation may be wrong for the price is unreasonable
-                # Sell only if the price is > 0 (no missing data in this particular date)
-                # perform sell action based on the sign of the action
+            ):  
+
+               
                 if self.state[index + self.stock_dim + 1] > 0:
-                    # Sell only if current asset is > 0
+
                     sell_num_shares = min(
                         abs(action), self.state[index + self.stock_dim + 1]
                     )
@@ -128,7 +126,7 @@ class StockTradingEnv(gym.Env):
                         * sell_num_shares
                         * (1 - self.sell_cost_pct[index])
                     )
-                    # update balance
+
                     self.state[0] += sell_amount
 
                     self.state[index + self.stock_dim + 1] -= sell_num_shares
@@ -145,21 +143,20 @@ class StockTradingEnv(gym.Env):
 
             return sell_num_shares
 
-        # perform sell action based on the sign of the action
+
         if self.turbulence_threshold is not None:
             if self.turbulence >= self.turbulence_threshold:
                 if self.state[index + 1] > 0:
-                    # Sell only if the price is > 0 (no missing data in this particular date)
-                    # if turbulence goes over threshold, just clear out all positions
+
                     if self.state[index + self.stock_dim + 1] > 0:
-                        # Sell only if current asset is > 0
+
                         sell_num_shares = self.state[index + self.stock_dim + 1]
                         sell_amount = (
                             self.state[index + 1]
                             * sell_num_shares
                             * (1 - self.sell_cost_pct[index])
                         )
-                        # update balance
+
                         self.state[0] += sell_amount
                         self.state[index + self.stock_dim + 1] = 0
                         self.cost += (
@@ -183,15 +180,11 @@ class StockTradingEnv(gym.Env):
         def _do_buy():
             if (
                 self.state[index + 2 * self.stock_dim + 1] != True
-            ):  # check if the stock is able to buy
-                # if self.state[index + 1] >0:
-                # Buy only if the price is > 0 (no missing data in this particular date)
+            ):  
+
                 available_amount = self.state[0] // (
                     self.state[index + 1] * (1 + self.buy_cost_pct[index])
-                )  # when buying stocks, we should consider the cost of trading when calculating available_amount, or we may be have cash<0
-                # print('available_amount:{}'.format(available_amount))
-
-                # update balance
+                )  
                 buy_num_shares = min(available_amount, action)
                 buy_amount = (
                     self.state[index + 1]
@@ -211,7 +204,7 @@ class StockTradingEnv(gym.Env):
 
             return buy_num_shares
 
-        # perform buy action based on the sign of the action
+
         if self.turbulence_threshold is None:
             buy_num_shares = _do_buy()
         else:
@@ -231,7 +224,7 @@ class StockTradingEnv(gym.Env):
     def step(self, actions):
         self.terminal = self.day >= len(self.df.index.unique()) - 1
         if self.terminal:
-            # print(f"Episode: {self.episode}")
+
             if self.make_plots:
                 self._make_plot()
             end_total_asset = self.state[0] + sum(
@@ -248,7 +241,7 @@ class StockTradingEnv(gym.Env):
                     )
                 )
                 - self.asset_memory[0]
-            )  # initial_amount is only cash part of our initial asset
+            )  
             df_total_value.columns = ["account_value"]
             df_total_value["date"] = self.date_memory
             df_total_value["daily_return"] = df_total_value["account_value"].pct_change(
@@ -301,20 +294,15 @@ class StockTradingEnv(gym.Env):
                 )
                 plt.close()
 
-            # Add outputs to logger interface
-            # logger.record("environment/portfolio_value", end_total_asset)
-            # logger.record("environment/total_reward", tot_reward)
-            # logger.record("environment/total_reward_pct", (tot_reward / (end_total_asset - tot_reward)) * 100)
-            # logger.record("environment/total_cost", self.cost)
-            # logger.record("environment/total_trades", self.trades)
+
 
             return self.state, self.reward, self.terminal, False, {}
 
         else:
-            actions = actions * self.hmax  # actions initially is scaled between 0 to 1
+            actions = actions * self.hmax  
             actions = actions.astype(
                 int
-            )  # convert into integer because we can't by fraction of shares
+            )  
             if self.turbulence_threshold is not None:
                 if self.turbulence >= self.turbulence_threshold:
                     actions = np.array([-self.hmax] * self.stock_dim)
@@ -322,26 +310,24 @@ class StockTradingEnv(gym.Env):
                 np.array(self.state[1 : (self.stock_dim + 1)])
                 * np.array(self.state[(self.stock_dim + 1) : (self.stock_dim * 2 + 1)])
             )
-            # print("begin_total_asset:{}".format(begin_total_asset))
+
 
             argsort_actions = np.argsort(actions)
             sell_index = argsort_actions[: np.where(actions < 0)[0].shape[0]]
             buy_index = argsort_actions[::-1][: np.where(actions > 0)[0].shape[0]]
 
             for index in sell_index:
-                # print(f"Num shares before: {self.state[index+self.stock_dim+1]}")
-                # print(f'take sell action before : {actions[index]}')
+
                 actions[index] = self._sell_stock(index, actions[index]) * (-1)
-                # print(f'take sell action after : {actions[index]}')
-                # print(f"Num shares after: {self.state[index+self.stock_dim+1]}")
+
 
             for index in buy_index:
-                # print('take buy action: {}'.format(actions[index]))
+
                 actions[index] = self._buy_stock(index, actions[index])
 
             self.actions_memory.append(actions)
 
-            # state: s -> s+1
+
             self.day += 1
             self.data = self.df.loc[self.day, :]
             if self.turbulence_threshold is not None:
@@ -358,38 +344,38 @@ class StockTradingEnv(gym.Env):
             self.asset_memory.append(end_total_asset)
             self.date_memory.append(self._get_date())
             
-            # Calculate returns and risk metrics
+
             raw_return = (end_total_asset - begin_total_asset) / begin_total_asset
             
-            # Calculate portfolio volatility using recent returns
+
             if len(self.asset_memory) > 1:
                 recent_returns = np.diff(self.asset_memory[-20:]) / self.asset_memory[-20:-1]
                 volatility = np.std(recent_returns) if len(recent_returns) > 0 else 0
             else:
                 volatility = 0
             
-            # Risk-adjusted return (Sharpe-like metric)
-            risk_penalty = 0.1 * volatility  # Penalize high volatility
+
+            risk_penalty = 0.1 * volatility  
             
-            # Trading penalties
-            trade_penalty = 0.001 * self.cost  # Transaction cost penalty
-            turnover_penalty = 0.0005 * self.trades  # Penalty for excessive trading
+
+            trade_penalty = 0.001 * self.cost  
+            turnover_penalty = 0.0005 * self.trades  
             
-            # Position concentration penalty
+
             stock_values = np.array(self.state[1 : (self.stock_dim + 1)]) * np.array(self.state[(self.stock_dim + 1) : (self.stock_dim * 2 + 1)])
             portfolio_weights = stock_values / end_total_asset if end_total_asset > 0 else np.zeros(self.stock_dim)
             concentration_penalty = 0.1 * np.sum(portfolio_weights ** 2)  # Herfindahl-Hirschman Index-like penalty
             
-            # Combine all components
+
             self.reward = raw_return - risk_penalty - trade_penalty - turnover_penalty - concentration_penalty
             
-            # Scale reward for better learning
+
             self.reward = self.reward * 1e-2
             
             self.rewards_memory.append(self.reward)
             self.state_memory.append(
                 self.state
-            )  # add current state in state_recorder for each step
+            )  
 
         return self.state, self.reward, self.terminal, False, {}
 
@@ -399,7 +385,7 @@ class StockTradingEnv(gym.Env):
         seed=None,
         options=None,
     ):
-        # initiate state
+
         self.day = 0
         self.data = self.df.loc[self.day, :]
         self.state = self._initiate_state()
@@ -425,7 +411,7 @@ class StockTradingEnv(gym.Env):
         self.cost = 0
         self.trades = 0
         self.terminal = False
-        # self.iteration=self.iteration
+
         self.rewards_memory = []
         self.actions_memory = []
         self.date_memory = [self._get_date()]
@@ -439,9 +425,9 @@ class StockTradingEnv(gym.Env):
 
     def _initiate_state(self):
         if self.initial:
-            # For Initial State
+
             if len(self.df.tic.unique()) > 1:
-                # for multiple stock
+
                 state = (
                     [self.initial_amount]
                     + self.data.close.values.tolist()
@@ -453,9 +439,9 @@ class StockTradingEnv(gym.Env):
                         ),
                         [],
                     )
-                )  # append initial stocks_share to initial state, instead of all zero
+                )  
             else:
-                # for single stock
+
                 state = (
                     [self.initial_amount]
                     + [self.data.close]
@@ -463,9 +449,9 @@ class StockTradingEnv(gym.Env):
                     + sum(([self.data[tech]] for tech in self.tech_indicator_list), [])
                 )
         else:
-            # Using Previous State
+
             if len(self.df.tic.unique()) > 1:
-                # for multiple stock
+
                 state = (
                     [self.previous_state[0]]
                     + self.data.close.values.tolist()
@@ -481,7 +467,7 @@ class StockTradingEnv(gym.Env):
                     )
                 )
             else:
-                # for single stock
+
                 state = (
                     [self.previous_state[0]]
                     + [self.data.close]
@@ -494,7 +480,7 @@ class StockTradingEnv(gym.Env):
 
     def _update_state(self):
         if len(self.df.tic.unique()) > 1:
-            # for multiple stock
+
             state = (
                 [self.state[0]]
                 + self.data.close.values.tolist()
@@ -509,7 +495,7 @@ class StockTradingEnv(gym.Env):
             )
 
         else:
-            # for single stock
+
             state = (
                 [self.state[0]]
                 + [self.data.close]
@@ -526,10 +512,10 @@ class StockTradingEnv(gym.Env):
             date = self.data.date
         return date
 
-    # add save_state_memory to preserve state in the trading process
+
     def save_state_memory(self):
         if len(self.df.tic.unique()) > 1:
-            # date and close price length must match actions length
+
             date_list = self.date_memory[:-1]
             df_date = pd.DataFrame(date_list)
             df_date.columns = ["date"]
@@ -548,19 +534,18 @@ class StockTradingEnv(gym.Env):
                 ],
             )
             df_states.index = df_date.date
-            # df_actions = pd.DataFrame({'date':date_list,'actions':action_list})
+
         else:
             date_list = self.date_memory[:-1]
             state_list = self.state_memory
             df_states = pd.DataFrame({"date": date_list, "states": state_list})
-        # print(df_states)
+
         return df_states
 
     def save_asset_memory(self):
         date_list = self.date_memory
         asset_list = self.asset_memory
-        # print(len(date_list))
-        # print(len(asset_list))
+
         df_account_value = pd.DataFrame(
             {"date": date_list, "account_value": asset_list}
         )
@@ -568,7 +553,7 @@ class StockTradingEnv(gym.Env):
 
     def save_action_memory(self):
         if len(self.df.tic.unique()) > 1:
-            # date and close price length must match actions length
+
             date_list = self.date_memory[:-1]
             df_date = pd.DataFrame(date_list)
             df_date.columns = ["date"]
@@ -577,7 +562,7 @@ class StockTradingEnv(gym.Env):
             df_actions = pd.DataFrame(action_list)
             df_actions.columns = self.data.tic.values
             df_actions.index = df_date.date
-            # df_actions = pd.DataFrame({'date':date_list,'actions':action_list})
+
         else:
             date_list = self.date_memory[:-1]
             action_list = self.actions_memory

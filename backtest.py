@@ -15,7 +15,7 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from finrl.meta.preprocessor.preprocessors import data_split
 
-# Load environment variables
+
 load_dotenv()
 
 
@@ -53,11 +53,11 @@ def load_test_data():
     df_all = pd.concat(df_list)
     df_all = df_all.sort_values(by=["date", "tic"]).reset_index(drop=True)
 
-    # ✅ Keep only dates that have all tickers
+
     valid_dates = df_all.groupby("date")["tic"].nunique()
     df_all = df_all[df_all["date"].isin(valid_dates[valid_dates == len(tickers)].index)]
 
-    print("✅ Sample processed data:")
+    print("Sample processed data:")
     print(df_all.head(10))
     return df_all
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         "print_verbosity": 1
     }
 
-    print(f"✅ Env initialized with {stock_dim} stocks and {len(test_df)} data rows.")
+    print(f"    Env initialized with {stock_dim} stocks and {len(test_df)} data rows.")
 
     test_env = StockTradingEnv(
         df=test_df,

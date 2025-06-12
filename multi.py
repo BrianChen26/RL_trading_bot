@@ -14,7 +14,7 @@ from finrl.agents.stablebaselines3.models import DRLAgent
 tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "JPM", "V", "WMT", "PG", "JNJ", "HD", "BAC", "MA", "UNH"]
 data_list = []
 
-print("📥 Fetching data for:", tickers)
+print("Fetching data for:", tickers)
 for tic in tickers:
     try:
         df = fetch_data_alpaca(tic, "2018-01-01", "2023-12-31")
@@ -71,7 +71,7 @@ for tic in tickers:
         time.sleep(1)  
         
     except Exception as e:
-        print(f"\n❌ Error processing {tic}: {str(e)}")
+        print(f"\Error processing {tic}: {str(e)}")
         continue
 
 print("\n")  
@@ -161,10 +161,10 @@ plt.show()
 
 daily_returns = df_account_value['account_value'].pct_change().dropna()
 sharpe_ratio = (252 ** 0.5) * daily_returns.mean() / daily_returns.std()
-print(f"✅ Final Portfolio Value: ${df_account_value['account_value'][-1]:,.2f}")
-print(f"📊 Sharpe Ratio: {sharpe_ratio:.3f}")
+print(f"Final Portfolio Value: ${df_account_value['account_value'][-1]:,.2f}")
+print(f"Sharpe Ratio: {sharpe_ratio:.3f}")
 
 annual_return = (df_account_value['account_value'][-1] / df_account_value['account_value'][0]) ** (252/len(df_account_value)) - 1
 max_drawdown = (df_account_value['account_value'] / df_account_value['account_value'].cummax() - 1).min()
-print(f"📈 Annual Return: {annual_return:.2%}")
-print(f"📉 Maximum Drawdown: {max_drawdown:.2%}")
+print(f"Annual Return: {annual_return:.2%}")
+print(f"Maximum Drawdown: {max_drawdown:.2%}")
